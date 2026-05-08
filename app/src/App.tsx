@@ -1,4 +1,5 @@
-import { ExternalLink, GitBranch, Heart, ShieldCheck, Sparkles, Star, Waves } from "lucide-react";
+import { ExternalLink, GitBranch, Heart, ShieldCheck, Star, Waves } from "lucide-react";
+import { ProcessingWorkbench } from "./features/processing/ProcessingWorkbench";
 import { useLatestCommit, useVersionMetadata } from "./lib/metadata/hooks";
 import { appLinks, buildInfo } from "./lib/metadata/static";
 
@@ -37,7 +38,7 @@ export function App() {
           </nav>
         </header>
 
-        <div className="grid flex-1 gap-8 py-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(360px,1.1fr)] lg:items-center">
+        <div className="grid flex-1 gap-8 py-8 lg:grid-cols-[minmax(320px,0.72fr)_minmax(0,1.28fr)] lg:items-center">
           <section className="space-y-7">
             <div className="inline-flex items-center gap-2 rounded-md border border-teal/20 bg-panel px-3 py-2 text-sm font-semibold text-teal">
               <ShieldCheck aria-hidden="true" size={16} />
@@ -61,60 +62,29 @@ export function App() {
             </dl>
           </section>
 
-          <section
-            className="rounded-lg border border-ink/10 bg-panel p-4 shadow-soft sm:p-5"
-            aria-label="App status"
-          >
-            <div className="grid gap-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h2 className="text-xl font-bold">Processing workbench</h2>
-                  <p className="mt-1 text-sm leading-6 text-ink/70">
-                    The audio pipeline module is being attached in the next commit. This shell is already
-                    Pages-ready.
-                  </p>
-                </div>
-                <Sparkles className="text-coral" aria-hidden="true" />
-              </div>
-
-              <div className="waveform" aria-hidden="true">
-                {Array.from({ length: 48 }, (_, index) => (
-                  <span key={index} style={{ height: `${28 + ((index * 17) % 68)}%` }} />
-                ))}
-              </div>
-
-              <div className="grid gap-3 rounded-md bg-paper p-4 text-sm">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-ink/70">Version</span>
-                  <strong>{version.data?.version ?? buildInfo.version}</strong>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="flex items-center gap-2 text-ink/70">
-                    <GitBranch aria-hidden="true" size={15} />
-                    Commit
-                  </span>
-                  <a
-                    className="font-semibold text-teal underline-offset-4 hover:underline"
-                    href={`${appLinks.repositoryUrl}/commit/${latestCommit.data?.sha ?? version.data?.commit ?? buildInfo.commit}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {commitLabel}
-                  </a>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-ink/70">Pages URL</span>
-                  <a
-                    className="font-semibold text-teal underline-offset-4 hover:underline"
-                    href={appLinks.pagesUrl}
-                  >
-                    {new URL(appLinks.pagesUrl).hostname}
-                  </a>
-                </div>
-              </div>
-            </div>
-          </section>
+          <ProcessingWorkbench />
         </div>
+
+        <footer className="grid gap-3 border-t border-ink/10 py-4 text-sm text-ink/70 sm:grid-cols-3">
+          <span>
+            Version <strong className="text-ink">{version.data?.version ?? buildInfo.version}</strong>
+          </span>
+          <span className="flex items-center gap-2">
+            <GitBranch aria-hidden="true" size={15} />
+            Commit
+            <a
+              className="font-semibold text-teal underline-offset-4 hover:underline"
+              href={`${appLinks.repositoryUrl}/commit/${latestCommit.data?.sha ?? version.data?.commit ?? buildInfo.commit}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {commitLabel}
+            </a>
+          </span>
+          <a className="font-semibold text-teal underline-offset-4 hover:underline" href={appLinks.pagesUrl}>
+            {appLinks.pagesUrl}
+          </a>
+        </footer>
       </section>
     </main>
   );

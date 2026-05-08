@@ -40,7 +40,171 @@ textarea {
     @apply flex h-40 items-center gap-1 rounded-md bg-ink p-4;
   }
 
+  .waveform.large {
+    @apply h-32;
+  }
+
   .waveform span {
     @apply block min-h-2 flex-1 rounded-full bg-gold;
+  }
+
+  .workbench {
+    @apply rounded-lg border border-ink/10 bg-panel p-4 shadow-soft sm:p-5;
+  }
+
+  .drop-zone {
+    @apply grid gap-3 sm:grid-cols-[1fr_auto];
+  }
+
+  .drop-button {
+    @apply flex min-h-24 items-center gap-4 rounded-md border border-dashed border-teal/45 bg-paper px-4 py-3 text-left text-ink transition hover:border-teal focus:outline-none focus:ring-2 focus:ring-teal/35;
+  }
+
+  .drop-button span {
+    @apply grid gap-1;
+  }
+
+  .drop-button small {
+    @apply text-sm font-medium text-ink/60;
+  }
+
+  .primary-button,
+  .secondary-button,
+  .download-button {
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-bold transition focus:outline-none focus:ring-2 focus:ring-teal/35 disabled:cursor-not-allowed disabled:opacity-55;
+  }
+
+  .primary-button {
+    @apply bg-teal text-white hover:bg-teal/90;
+  }
+
+  .secondary-button {
+    @apply border border-ink/10 bg-panel text-ink hover:border-teal/35 hover:text-teal;
+  }
+
+  .download-button {
+    @apply border border-moss/25 bg-moss text-white hover:bg-moss/90;
+  }
+
+  .action-row {
+    @apply flex flex-wrap items-center gap-2;
+  }
+
+  .options-panel {
+    @apply grid w-full gap-4 rounded-md border border-ink/10 bg-paper p-4 lg:w-80;
+  }
+
+  .panel-title {
+    @apply flex items-center gap-2;
+  }
+
+  .panel-title h2 {
+    @apply text-lg font-black;
+  }
+
+  .segmented {
+    @apply grid gap-2;
+  }
+
+  .segmented legend,
+  .range-field > span,
+  .field-grid label > span {
+    @apply text-xs font-bold uppercase tracking-wide text-ink/55;
+  }
+
+  .segmented div {
+    @apply grid grid-cols-3 gap-1 rounded-md bg-panel p-1;
+  }
+
+  .segmented button {
+    @apply min-h-9 rounded px-2 text-sm font-bold text-ink/70 transition hover:bg-paper hover:text-ink focus:outline-none focus:ring-2 focus:ring-teal/35;
+  }
+
+  .segmented button[aria-pressed="true"] {
+    @apply bg-teal text-white shadow-sm hover:bg-teal hover:text-white;
+  }
+
+  .field-grid {
+    @apply grid grid-cols-2 gap-3;
+  }
+
+  .field-grid label {
+    @apply grid gap-2;
+  }
+
+  .field-grid select {
+    @apply min-h-10 rounded-md border border-ink/10 bg-panel px-3 text-sm font-semibold text-ink focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/25;
+  }
+
+  .range-field {
+    @apply grid gap-2;
+  }
+
+  .range-field > span {
+    @apply flex items-center justify-between gap-3;
+  }
+
+  .range-field strong {
+    @apply text-ink;
+  }
+
+  .range-field input {
+    @apply accent-teal disabled:opacity-35;
+  }
+
+  .toggle-row {
+    @apply flex min-h-10 items-center gap-3 rounded-md bg-panel px-3 text-sm font-semibold;
+  }
+
+  .toggle-row input {
+    @apply h-4 w-4 accent-teal;
+  }
+
+  .status-panel {
+    @apply grid gap-3 rounded-md border border-ink/10 bg-paper p-4 text-sm;
+  }
+
+  .status-panel.error {
+    @apply border-coral/30 bg-coral/10 text-ink;
+  }
+
+  .status-panel.success {
+    @apply border-moss/30 bg-moss/10;
+  }
+
+  .status-panel small {
+    @apply break-words text-ink/65;
+  }
+
+  .status-panel dl {
+    @apply grid grid-cols-3 gap-2;
+  }
+
+  .status-panel dt {
+    @apply text-xs font-bold uppercase tracking-wide text-ink/50;
+  }
+
+  .status-panel dd {
+    @apply mt-1 font-black;
+  }
+
+  .status-panel details {
+    @apply rounded-md bg-panel p-3;
+  }
+
+  .status-panel summary {
+    @apply cursor-pointer font-bold;
+  }
+
+  .status-panel code {
+    @apply mt-2 block max-h-32 overflow-auto whitespace-pre-wrap break-words text-xs text-ink/70;
+  }
+
+  .progress-track {
+    @apply h-2 overflow-hidden rounded-full bg-ink/10;
+  }
+
+  .progress-track span {
+    @apply block h-full rounded-full bg-teal transition-all;
   }
 }
