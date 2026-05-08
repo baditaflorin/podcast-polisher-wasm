@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test("renders project links and build metadata", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("./");
 
   await expect(page.getByRole("heading", { name: /polish a podcast/i })).toBeVisible();
   await expect(page.getByRole("link", { name: /star on github/i })).toHaveAttribute(
@@ -19,7 +19,7 @@ test("renders project links and build metadata", async ({ page }) => {
 test("processes demo audio through the browser pipeline", async ({ page }) => {
   test.setTimeout(120_000);
 
-  await page.goto("/");
+  await page.goto("./");
   await page.getByRole("button", { name: /demo audio/i }).click();
   await expect(page.getByText("demo-podcast.wav")).toBeVisible();
 
