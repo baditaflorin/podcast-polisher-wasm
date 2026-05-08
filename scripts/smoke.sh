@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PORT="${PORT:-$((4300 + RANDOM % 1000))}"
+PORT="${PORT:-$((30000 + RANDOM % 10000))}"
 BASE_URL="http://127.0.0.1:${PORT}/podcast-polisher-wasm/"
 LOG_FILE="tmp/smoke-server.log"
 
