@@ -17,8 +17,9 @@
     "fmt": "prettier --write .",
     "test": "vitest run",
     "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:e2e": "playwright test",
     "smoke": "bash scripts/smoke.sh",
-    "pages-preview": "npx serve docs --listen 4173",
+    "pages-preview": "node scripts/pages-server.mjs 4173",
     "audit:high": "npm audit --audit-level=high"
   },
   "dependencies": {

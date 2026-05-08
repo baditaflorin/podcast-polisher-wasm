@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+make test
+make build
+
+test -s docs/index.html
+test -s docs/version.json
+grep -q '<!doctype html>' docs/index.html
+
+make smoke

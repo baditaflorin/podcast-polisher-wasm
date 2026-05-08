@@ -5,7 +5,9 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["docs/assets/**", "node_modules/**", "coverage/**"] },
+  {
+    ignores: ["docs/assets/**", "node_modules/**", "coverage/**", "playwright-report/**", "test-results/**"]
+  },
   {
     files: ["**/*.{js,mjs}"],
     languageOptions: {

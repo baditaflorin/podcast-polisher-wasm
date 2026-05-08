@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+MESSAGE_FILE="$1"
+HEADER="$(head -n 1 "$MESSAGE_FILE")"
+
+if ! printf '%s' "$HEADER" | grep -Eq '^(feat|fix|docs|chore|refactor|test|ops|data|security|build|ci)(\([a-z0-9._-]+\))?!?: .+'; then
+  echo "Commit message must use Conventional Commits, e.g. feat: add processor." >&2
+  exit 1
+fi
