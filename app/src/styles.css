@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color: #172026;
+  background: #f7f3ea;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+@layer components {
+  .icon-link {
+    @apply inline-flex min-h-10 items-center gap-2 rounded-md border border-ink/10 bg-panel px-3 py-2 text-sm font-semibold text-ink transition hover:border-teal/40 hover:text-teal focus:outline-none focus:ring-2 focus:ring-teal/35;
+  }
+
+  .icon-link.support {
+    @apply border-coral/20 text-coral hover:border-coral/45 hover:text-coral;
+  }
+
+  .waveform {
+    @apply flex h-40 items-center gap-1 rounded-md bg-ink p-4;
+  }
+
+  .waveform span {
+    @apply block min-h-2 flex-1 rounded-full bg-gold;
+  }
+}

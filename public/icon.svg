@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title>Podcast Polisher WASM</title>
+  <rect width="128" height="128" rx="20" fill="#005f73"/>
+  <path d="M27 69c11-35 23-35 34 0s23 35 40 0" fill="none" stroke="#f7f3ea" stroke-width="10" stroke-linecap="round"/>
+  <path d="M27 91c12-18 22-18 34 0s25 18 40 0" fill="none" stroke="#c49a32" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="64" cy="38" r="15" fill="#d95f43"/>
+</svg>
