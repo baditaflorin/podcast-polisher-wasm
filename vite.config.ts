@@ -1,4 +1,5 @@
 import react from "@vitejs/plugin-react";
+import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vite";
@@ -10,6 +11,7 @@ type PackageJson = {
 const packageJson = JSON.parse(
   readFileSync(new URL("./package.json", import.meta.url), "utf8")
 ) as PackageJson;
+const gitCommit = process.env.VITE_GIT_COMMIT ?? readGitCommit();
 
 export default defineConfig({
   root: "app",
@@ -18,7 +20,7 @@ export default defineConfig({
   plugins: [react()],
   define: {
     __APP_VERSION__: JSON.stringify(packageJson.version),
-    __APP_COMMIT__: JSON.stringify(process.env.VITE_GIT_COMMIT ?? "main"),
+    __APP_COMMIT__: JSON.stringify(gitCommit),
     __APP_BUILT_AT__: JSON.stringify("static"),
     __REPOSITORY_URL__: JSON.stringify("https://github.com/baditaflorin/podcast-polisher-wasm"),
     __PAGES_URL__: JSON.stringify("https://baditaflorin.github.io/podcast-polisher-wasm/"),
@@ -52,3 +54,11 @@ export default defineConfig({
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"]
   }
 });
+
+function readGitCommit(): string {
+  try {
+    return execSync("git rev-parse --short=12 HEAD", { encoding: "utf8" }).trim();
+  } catch {
+    return "unknown";
+  }
+}
