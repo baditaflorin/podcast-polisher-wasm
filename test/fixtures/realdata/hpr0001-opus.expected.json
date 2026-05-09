@@ -4,7 +4,7 @@
   "container": "ogg",
   "codec": "opus",
   "sourceShape": "full-episode",
-  "recommendedPreset": "podcast",
+  "recommendedPreset": "voiceover",
   "confidenceLabel": "medium",
   "warningCodes": ["long-job", "alternate-codec-review"],
   "fatalCodes": []

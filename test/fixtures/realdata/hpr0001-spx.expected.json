@@ -6,6 +6,6 @@
   "sourceShape": "legacy-format",
   "recommendedPreset": "archive",
   "confidenceLabel": "low",
-  "warningCodes": ["legacy-codec-review", "duration-unavailable"],
+  "warningCodes": ["duration-unavailable", "legacy-codec-review", "low-sample-rate-review"],
   "fatalCodes": []
 }

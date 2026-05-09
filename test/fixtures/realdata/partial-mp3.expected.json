@@ -6,6 +6,6 @@
   "sourceShape": "partial",
   "recommendedPreset": "podcast",
   "confidenceLabel": "low",
-  "warningCodes": ["possible-partial-file", "short-clip-loudness-sample"],
+  "warningCodes": ["low-sample-rate-review", "possible-partial-file", "short-clip-loudness-sample"],
   "fatalCodes": []
 }

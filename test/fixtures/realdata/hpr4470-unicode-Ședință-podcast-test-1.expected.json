@@ -5,7 +5,7 @@
   "codec": "mp3",
   "sourceShape": "full-episode",
   "recommendedPreset": "voiceover",
-  "confidenceLabel": "medium",
+  "confidenceLabel": "high",
   "warningCodes": ["long-job", "unicode-filename-normalized"],
   "fatalCodes": []
 }
