@@ -1,6 +1,6 @@
 {
   "name": "podcast-polisher-wasm",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "private": false,
   "type": "module",
   "description": "Browser-only podcast post-production with noise reduction, cleanup, and EBU R128 loudness normalization.",

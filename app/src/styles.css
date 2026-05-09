@@ -56,6 +56,10 @@ textarea {
     @apply grid gap-3 sm:grid-cols-[1fr_auto];
   }
 
+  .drop-zone.dragging .drop-button {
+    @apply border-teal bg-teal/10;
+  }
+
   .drop-button {
     @apply flex min-h-24 items-center gap-4 rounded-md border border-dashed border-teal/45 bg-paper px-4 py-3 text-left text-ink transition hover:border-teal focus:outline-none focus:ring-2 focus:ring-teal/35;
   }
@@ -88,6 +92,26 @@ textarea {
 
   .action-row {
     @apply flex flex-wrap items-center gap-2;
+  }
+
+  .notice {
+    @apply rounded-md border border-teal/20 bg-teal/5 px-3 py-2 text-sm font-semibold text-teal;
+  }
+
+  .queue-panel {
+    @apply grid gap-2 rounded-md border border-ink/10 bg-paper p-3;
+  }
+
+  .queue-panel button {
+    @apply flex min-h-11 items-center justify-between gap-3 rounded-md border border-ink/10 bg-panel px-3 py-2 text-left text-sm font-semibold transition hover:border-teal/35 hover:text-teal focus:outline-none focus:ring-2 focus:ring-teal/35;
+  }
+
+  .queue-panel button[aria-pressed="true"] {
+    @apply border-teal/50 bg-teal/10 text-teal;
+  }
+
+  .queue-panel small {
+    @apply shrink-0 text-xs text-ink/55;
   }
 
   .options-panel {

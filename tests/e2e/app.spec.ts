@@ -35,8 +35,30 @@ test("processes demo audio through the browser pipeline", async ({ page }) => {
 
 test("blocks empty files before FFmpeg starts", async ({ page }) => {
   await page.goto("./");
-  await page.locator('input[type="file"]').setInputFiles(resolve("test/fixtures/realdata/empty-mp3.mp3"));
+  await page
+    .locator('input[type="file"]')
+    .first()
+    .setInputFiles(resolve("test/fixtures/realdata/empty-mp3.mp3"));
 
   await expect(page.getByText(/this recording is empty/i)).toBeVisible();
   await expect(page.getByRole("button", { name: /^process$/i })).toBeDisabled();
+});
+
+test("accepts multiple real files and exposes state actions", async ({ page }) => {
+  await page.goto("./");
+  await page
+    .locator('input[type="file"]')
+    .first()
+    .setInputFiles([
+      resolve("test/fixtures/realdata/nasa-short-mp3.mp3"),
+      resolve("test/fixtures/realdata/bell-historic-ogg.ogg")
+    ]);
+
+  await expect(page.getByText(/2 files ready/i)).toBeVisible();
+  const queue = page.getByLabel("Selected files");
+  await expect(queue.getByRole("button", { name: /nasa-short-mp3/i })).toBeVisible();
+  await expect(queue.getByRole("button", { name: /bell-historic-ogg/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /copy state/i })).toBeEnabled();
+  await page.getByRole("button", { name: /reset/i }).click();
+  await expect(page.getByText(/2 files ready/i)).toBeHidden();
 });
