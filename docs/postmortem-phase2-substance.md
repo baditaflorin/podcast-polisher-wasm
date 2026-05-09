@@ -1,7 +1,7 @@
 # Phase 2 Substance Postmortem
 
 Date: 2026-05-09
-Version: v0.2.2
+Version: v0.2.3
 Mode: A, GitHub Pages only
 
 ## Real-Data Pass Rate
