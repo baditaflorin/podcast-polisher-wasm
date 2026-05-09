@@ -28,6 +28,8 @@ The set intentionally spans clean, mildly messy, genuinely messy, broken, advers
 
 Strict useful-pass baseline: 2/10. Raw export completion baseline: 4/10.
 
+Phase 2 result after implementation: 9/10 fixtures now produce a useful first guess on file selection, and 10/10 avoid silent wrongness. The empty file is intentionally blocked before FFmpeg starts.
+
 `nasa-short-mp3`
 
 - What v1 did: Exported successfully in 3.7s. Reported input loudness -17.3 LUFS and produced `nasa-houston-problem-polished.mp3`.
