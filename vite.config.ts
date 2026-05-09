@@ -11,7 +11,7 @@ type PackageJson = {
 const packageJson = JSON.parse(
   readFileSync(new URL("./package.json", import.meta.url), "utf8")
 ) as PackageJson;
-const gitCommit = process.env.VITE_GIT_COMMIT ?? readGitCommit();
+const gitCommit = process.env.VITE_GIT_COMMIT ?? readExistingPagesCommit() ?? readGitCommit();
 
 export default defineConfig({
   root: "app",
@@ -60,5 +60,16 @@ function readGitCommit(): string {
     return execSync("git rev-parse --short=12 HEAD", { encoding: "utf8" }).trim();
   } catch {
     return "unknown";
+  }
+}
+
+function readExistingPagesCommit(): string | undefined {
+  try {
+    const metadata = JSON.parse(readFileSync(new URL("./docs/version.json", import.meta.url), "utf8")) as {
+      commit?: string;
+    };
+    return metadata.commit;
+  } catch {
+    return undefined;
   }
 }
