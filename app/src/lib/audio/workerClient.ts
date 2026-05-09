@@ -8,6 +8,7 @@ export type AudioProcessorClient = {
     options: ProcessingOptions,
     onProgress: (progress: ProcessingProgress) => void
   ): Promise<ProcessingResult>;
+  cancel(): void;
   dispose(): Promise<void>;
 };
 
@@ -21,8 +22,11 @@ export function createAudioProcessorClient(): AudioProcessorClient {
     process(file, options, onProgress) {
       return api.processAudio(file, options, proxy(onProgress));
     },
+    cancel() {
+      worker.terminate();
+    },
     async dispose() {
-      await api.dispose();
+      await api.dispose().catch(() => undefined);
       worker.terminate();
     }
   };

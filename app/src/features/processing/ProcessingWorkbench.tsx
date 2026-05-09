@@ -1,48 +1,42 @@
-import {
-  Activity,
-  Download,
-  FileAudio,
-  Loader2,
-  Play,
-  RotateCcw,
-  SlidersHorizontal,
-  Upload,
-  Wand2
-} from "lucide-react";
+import { Download, Loader2, Play, RotateCcw, Square, Upload, Wand2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createDemoPodcastFile } from "../../lib/audio/demoAudio";
+import { createExportMetadata, metadataFileName, stableJson } from "../../lib/audio/exportMetadata";
+import { analyzeAudioFile, type AudioPreflight } from "../../lib/audio/preflight";
 import { loadProcessingOptions, saveProcessingOptions } from "../../lib/audio/preferences";
-import { createAudioProcessorClient } from "../../lib/audio/workerClient";
+import { createAudioProcessorClient, type AudioProcessorClient } from "../../lib/audio/workerClient";
+import { buildInfo } from "../../lib/metadata/static";
 import type {
   ProcessingOptions,
   ProcessingProgress,
   ProcessingResult,
   SerializedProcessingError
 } from "../../lib/audio/types";
-
-type ProcessingState = "idle" | "running" | "done" | "error";
-
-const targetOptions = [
-  { label: "Podcast", value: -16 },
-  { label: "Mono voice", value: -19 },
-  { label: "Broadcast", value: -23 }
-];
-
-const presetOptions: Array<{ label: string; value: ProcessingOptions["preset"] }> = [
-  { label: "Podcast", value: "podcast" },
-  { label: "Voiceover", value: "voiceover" },
-  { label: "Archive", value: "archive" }
-];
+import { probeBrowserMedia } from "./mediaProbe";
+import { OptionsPanel } from "./OptionsPanel";
+import { DebugPanel, PreflightPanel, StatusPanel } from "./ProcessingPanels";
+import { normalizeUiError } from "./processingErrors";
+import { optionsForPreset } from "./processingOptions";
+import type { ActivityEntry, ProcessingState, Sidecar } from "./processingTypes";
 
 export function ProcessingWorkbench() {
   const [file, setFile] = useState<File | undefined>();
+  const [preflight, setPreflight] = useState<AudioPreflight | undefined>();
   const [options, setOptions] = useState<ProcessingOptions>(() => loadProcessingOptions());
   const [progress, setProgress] = useState<ProcessingProgress | undefined>();
   const [state, setState] = useState<ProcessingState>("idle");
   const [result, setResult] = useState<ProcessingResult | undefined>();
   const [error, setError] = useState<SerializedProcessingError | undefined>();
   const [downloadUrl, setDownloadUrl] = useState<string>();
+  const [metadataSidecar, setMetadataSidecar] = useState<Sidecar>();
+  const [activity, setActivity] = useState<ActivityEntry[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  const analysisIdRef = useRef(0);
+  const processingIdRef = useRef(0);
+  const cancelledProcessingIdRef = useRef<number | undefined>(undefined);
+  const activeClientRef = useRef<AudioProcessorClient | undefined>(undefined);
+  const activityIdRef = useRef(0);
+  const debugEnabled = useMemo(() => new URLSearchParams(window.location.search).get("debug") === "1", []);
 
   useEffect(() => {
     saveProcessingOptions(options);
@@ -50,83 +44,155 @@ export function ProcessingWorkbench() {
 
   useEffect(() => {
     return () => {
-      if (downloadUrl) {
-        URL.revokeObjectURL(downloadUrl);
-      }
+      revokeUrl(downloadUrl);
+      revokeUrl(metadataSidecar?.url);
+      activeClientRef.current?.cancel();
     };
-  }, [downloadUrl]);
+  }, [downloadUrl, metadataSidecar?.url]);
 
-  const canProcess = Boolean(file) && state !== "running";
+  const canProcess = Boolean(file && preflight?.canProcess && state !== "analyzing" && state !== "running");
   const fileSize = useMemo(() => (file ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : "No file"), [file]);
+
+  async function selectFile(nextFile: File) {
+    const analysisId = analysisIdRef.current + 1;
+    analysisIdRef.current = analysisId;
+    activeClientRef.current?.cancel();
+    revokeUrl(downloadUrl);
+    revokeUrl(metadataSidecar?.url);
+    setFile(nextFile);
+    setPreflight(undefined);
+    setResult(undefined);
+    setDownloadUrl(undefined);
+    setMetadataSidecar(undefined);
+    setError(undefined);
+    setState("analyzing");
+    setProgress({ stage: "preparing", ratio: 0.08, message: "Checking recording before processing" });
+    addActivity("File selected", `${nextFile.name} (${(nextFile.size / 1024 / 1024).toFixed(2)} MB)`);
+
+    try {
+      const nextPreflight = await analyzeAudioFile(nextFile, { mediaProbe: probeBrowserMedia });
+      if (analysisId !== analysisIdRef.current) {
+        return;
+      }
+
+      setPreflight(nextPreflight);
+      setState(nextPreflight.canProcess ? "ready" : "blocked");
+      setProgress(undefined);
+      if (nextPreflight.canProcess) {
+        setOptions((current) => optionsForPreset(current, nextPreflight.recommendation.preset));
+      }
+      addActivity(
+        nextPreflight.canProcess ? "First guess ready" : "File blocked",
+        `${nextPreflight.sourceShape}, ${nextPreflight.confidenceLabel} confidence`
+      );
+    } catch (caught) {
+      if (analysisId !== analysisIdRef.current) {
+        return;
+      }
+      setState("error");
+      setError({
+        code: "unknown",
+        message: "The recording could not be inspected.",
+        what: "Preflight could not read the file.",
+        why: caught instanceof Error ? caught.message : "The browser did not return usable media metadata.",
+        nowWhat: "Choose the original recording again or convert it to MP3/WAV first.",
+        recoverable: true
+      });
+    }
+  }
 
   async function runProcessing() {
     if (!file) {
       inputRef.current?.click();
       return;
     }
+    if (!preflight?.canProcess) {
+      setState("blocked");
+      return;
+    }
 
+    const processingId = processingIdRef.current + 1;
+    processingIdRef.current = processingId;
+    cancelledProcessingIdRef.current = undefined;
     setState("running");
     setError(undefined);
     setResult(undefined);
+    revokeUrl(downloadUrl);
+    revokeUrl(metadataSidecar?.url);
+    setDownloadUrl(undefined);
+    setMetadataSidecar(undefined);
     setProgress({ stage: "loading", ratio: 0.02, message: "Starting worker" });
+    addActivity("Processing started", `${preflight.facts.sourceId} with ${options.preset} preset`);
 
     const client = createAudioProcessorClient();
+    activeClientRef.current = client;
 
     try {
       const output = await client.process(file, options, setProgress);
-      setResult(output);
-      setDownloadUrl((currentUrl) => {
-        if (currentUrl) {
-          URL.revokeObjectURL(currentUrl);
-        }
+      if (processingId !== processingIdRef.current || cancelledProcessingIdRef.current === processingId) {
+        return;
+      }
 
-        return URL.createObjectURL(new Blob([toArrayBuffer(output.bytes)], { type: output.mimeType }));
+      const metadata = createExportMetadata({ app: buildInfo, options, preflight, result: output });
+      setResult(output);
+      setDownloadUrl(URL.createObjectURL(new Blob([toArrayBuffer(output.bytes)], { type: output.mimeType })));
+      setMetadataSidecar({
+        fileName: metadataFileName(output.fileName),
+        url: URL.createObjectURL(new Blob([stableJson(metadata)], { type: "application/json" }))
       });
       setState("done");
+      addActivity("Export ready", `${output.fileName}, ${preflight.confidenceLabel} inference confidence`);
     } catch (caught) {
+      if (cancelledProcessingIdRef.current === processingId) {
+        return;
+      }
       setError(normalizeUiError(caught));
       setState("error");
+      addActivity("Processing failed", normalizeUiError(caught).message);
     } finally {
+      if (activeClientRef.current === client) {
+        activeClientRef.current = undefined;
+      }
       await client.dispose();
     }
   }
 
+  function cancelProcessing() {
+    cancelledProcessingIdRef.current = processingIdRef.current;
+    activeClientRef.current?.cancel();
+    activeClientRef.current = undefined;
+    setState("cancelled");
+    setProgress({ stage: "cancelled", ratio: 0, message: "Processing cancelled" });
+    addActivity("Processing cancelled", "The active worker was terminated.");
+  }
+
+  function resetWorkbench() {
+    analysisIdRef.current += 1;
+    processingIdRef.current += 1;
+    activeClientRef.current?.cancel();
+    revokeUrl(downloadUrl);
+    revokeUrl(metadataSidecar?.url);
+    setFile(undefined);
+    setPreflight(undefined);
+    setProgress(undefined);
+    setError(undefined);
+    setResult(undefined);
+    setDownloadUrl(undefined);
+    setMetadataSidecar(undefined);
+    setState("idle");
+    setOptions(loadProcessingOptions());
+    addActivity("Reset", "Workbench returned to idle.");
+  }
+
   function applyPreset(nextPreset: ProcessingOptions["preset"]) {
-    setOptions((current) => {
-      if (nextPreset === "voiceover") {
-        return {
-          ...current,
-          preset: nextPreset,
-          targetLufs: -19,
-          highpassHz: 90,
-          lowpassHz: 14500,
-          denoiseMix: 0.9,
-          removeSilence: true
-        };
-      }
+    setOptions((current) => optionsForPreset(current, nextPreset));
+    addActivity("Preset changed", nextPreset);
+  }
 
-      if (nextPreset === "archive") {
-        return {
-          ...current,
-          preset: nextPreset,
-          targetLufs: -23,
-          highpassHz: 55,
-          lowpassHz: 18000,
-          denoiseMix: 0.55,
-          removeSilence: false
-        };
-      }
-
-      return {
-        ...current,
-        preset: nextPreset,
-        targetLufs: -16,
-        highpassHz: 80,
-        lowpassHz: 16000,
-        denoiseMix: 0.85,
-        removeSilence: true
-      };
-    });
+  function addActivity(label: string, detail: string) {
+    activityIdRef.current += 1;
+    const entry = { id: activityIdRef.current, label, detail };
+    setActivity((current) => [entry, ...current].slice(0, 8));
   }
 
   return (
@@ -138,15 +204,11 @@ export function ProcessingWorkbench() {
               ref={inputRef}
               className="sr-only"
               type="file"
-              accept="audio/*,.wav,.mp3,.m4a,.aac,.flac,.ogg,.opus"
+              accept="audio/*,video/mp4,video/webm,.wav,.mp3,.m4a,.aac,.flac,.ogg,.opus,.spx,.mp4,.m4v,.mov,.webm"
               onChange={(event) => {
                 const nextFile = event.target.files?.[0];
                 if (nextFile) {
-                  setFile(nextFile);
-                  setResult(undefined);
-                  setDownloadUrl(undefined);
-                  setError(undefined);
-                  setState("idle");
+                  void selectFile(nextFile);
                 }
               }}
             />
@@ -160,13 +222,7 @@ export function ProcessingWorkbench() {
             <button
               className="secondary-button"
               type="button"
-              onClick={() => {
-                setFile(createDemoPodcastFile());
-                setResult(undefined);
-                setDownloadUrl(undefined);
-                setError(undefined);
-                setState("idle");
-              }}
+              onClick={() => void selectFile(createDemoPodcastFile())}
             >
               <Wand2 aria-hidden="true" size={18} />
               Demo audio
@@ -178,6 +234,8 @@ export function ProcessingWorkbench() {
               <span key={index} style={{ height: `${22 + ((index * 29 + (file?.size ?? 11)) % 76)}%` }} />
             ))}
           </div>
+
+          <PreflightPanel preflight={preflight} state={state} />
 
           <div className="action-row">
             <button
@@ -193,18 +251,13 @@ export function ProcessingWorkbench() {
               )}
               Process
             </button>
-            <button
-              className="secondary-button"
-              type="button"
-              onClick={() => {
-                setOptions(loadProcessingOptions());
-                setProgress(undefined);
-                setError(undefined);
-                setResult(undefined);
-                setDownloadUrl(undefined);
-                setState("idle");
-              }}
-            >
+            {state === "running" ? (
+              <button className="secondary-button" type="button" onClick={cancelProcessing}>
+                <Square aria-hidden="true" size={17} />
+                Cancel
+              </button>
+            ) : null}
+            <button className="secondary-button" type="button" onClick={resetWorkbench}>
               <RotateCcw aria-hidden="true" size={18} />
               Reset
             </button>
@@ -214,274 +267,30 @@ export function ProcessingWorkbench() {
                 Download {result.fileName}
               </a>
             ) : null}
+            {metadataSidecar ? (
+              <a className="secondary-button" href={metadataSidecar.url} download={metadataSidecar.fileName}>
+                <Download aria-hidden="true" size={18} />
+                Metadata
+              </a>
+            ) : null}
           </div>
 
           <StatusPanel progress={progress} state={state} error={error} result={result} />
+          {debugEnabled ? (
+            <DebugPanel activity={activity} preflight={preflight} state={state} progress={progress} />
+          ) : null}
         </div>
 
-        <form className="options-panel" aria-label="Processing options">
-          <div className="panel-title">
-            <SlidersHorizontal aria-hidden="true" size={18} />
-            <h2>Pipeline</h2>
-          </div>
-
-          <SegmentedControl
-            label="Preset"
-            value={options.preset}
-            options={presetOptions}
-            onChange={(value) => applyPreset(value)}
-          />
-
-          <SegmentedControl
-            label="Target loudness"
-            value={options.targetLufs}
-            options={targetOptions}
-            onChange={(value) => setOptions((current) => ({ ...current, targetLufs: value }))}
-          />
-
-          <div className="field-grid">
-            <label>
-              <span>Noise</span>
-              <select
-                value={options.noiseReduction}
-                onChange={(event) =>
-                  setOptions((current) => ({
-                    ...current,
-                    noiseReduction: event.target.value as ProcessingOptions["noiseReduction"]
-                  }))
-                }
-              >
-                <option value="rnnoise">RNNoise</option>
-                <option value="spectral">Spectral</option>
-                <option value="off">Off</option>
-              </select>
-            </label>
-
-            <label>
-              <span>Export</span>
-              <select
-                value={options.format}
-                onChange={(event) =>
-                  setOptions((current) => ({
-                    ...current,
-                    format: event.target.value as ProcessingOptions["format"]
-                  }))
-                }
-              >
-                <option value="mp3">MP3</option>
-                <option value="wav">WAV</option>
-              </select>
-            </label>
-          </div>
-
-          <RangeField
-            label="Denoise mix"
-            value={options.denoiseMix}
-            min={0}
-            max={1}
-            step={0.05}
-            suffix=""
-            onChange={(value) => setOptions((current) => ({ ...current, denoiseMix: value }))}
-          />
-          <RangeField
-            label="High-pass"
-            value={options.highpassHz}
-            min={40}
-            max={140}
-            step={5}
-            suffix="Hz"
-            onChange={(value) => setOptions((current) => ({ ...current, highpassHz: value }))}
-          />
-          <RangeField
-            label="Low-pass"
-            value={options.lowpassHz}
-            min={9000}
-            max={20000}
-            step={500}
-            suffix="Hz"
-            onChange={(value) => setOptions((current) => ({ ...current, lowpassHz: value }))}
-          />
-          <RangeField
-            label="MP3 bitrate"
-            value={options.mp3BitrateKbps}
-            min={96}
-            max={320}
-            step={32}
-            suffix="kbps"
-            disabled={options.format !== "mp3"}
-            onChange={(value) => setOptions((current) => ({ ...current, mp3BitrateKbps: value }))}
-          />
-
-          <label className="toggle-row">
-            <input
-              type="checkbox"
-              checked={options.removeSilence}
-              onChange={(event) =>
-                setOptions((current) => ({ ...current, removeSilence: event.target.checked }))
-              }
-            />
-            <span>Trim leading silence</span>
-          </label>
-        </form>
+        <OptionsPanel options={options} setOptions={setOptions} onPresetChange={applyPreset} />
       </div>
     </section>
   );
 }
 
-function StatusPanel({
-  progress,
-  state,
-  error,
-  result
-}: {
-  progress?: ProcessingProgress;
-  state: ProcessingState;
-  error?: SerializedProcessingError;
-  result?: ProcessingResult;
-}) {
-  if (error) {
-    return (
-      <div className="status-panel error" role="alert">
-        <strong>{error.message}</strong>
-        {error.detail ? <small>{error.detail.slice(0, 320)}</small> : null}
-      </div>
-    );
+function revokeUrl(url: string | undefined): void {
+  if (url) {
+    URL.revokeObjectURL(url);
   }
-
-  if (result) {
-    return (
-      <div className="status-panel success">
-        <div className="flex items-center gap-2">
-          <Activity aria-hidden="true" size={18} />
-          <strong>Export ready</strong>
-        </div>
-        <dl>
-          <div>
-            <dt>Input loudness</dt>
-            <dd>{formatOptionalNumber(result.summary.measuredInputLufs, " LUFS")}</dd>
-          </div>
-          <div>
-            <dt>Size</dt>
-            <dd>{(result.summary.outputBytes / 1024 / 1024).toFixed(2)} MB</dd>
-          </div>
-          <div>
-            <dt>Denoise</dt>
-            <dd>{result.summary.usedRnnoise ? "RNNoise" : "Spectral/off"}</dd>
-          </div>
-        </dl>
-        <details>
-          <summary>FFmpeg command</summary>
-          <code>{result.command.join(" ")}</code>
-        </details>
-      </div>
-    );
-  }
-
-  return (
-    <div className="status-panel">
-      <div className="flex items-center gap-2">
-        <FileAudio aria-hidden="true" size={18} />
-        <strong>{progress?.message ?? "Ready for local processing"}</strong>
-      </div>
-      <div className="progress-track" aria-hidden="true">
-        <span style={{ width: `${Math.round((progress?.ratio ?? 0) * 100)}%` }} />
-      </div>
-      <small>{state === "running" ? progress?.stage : "No upload. No account. Static page."}</small>
-    </div>
-  );
-}
-
-function SegmentedControl<T extends string | number>({
-  label,
-  value,
-  options,
-  onChange
-}: {
-  label: string;
-  value: T;
-  options: Array<{ label: string; value: T }>;
-  onChange: (value: T) => void;
-}) {
-  return (
-    <fieldset className="segmented">
-      <legend>{label}</legend>
-      <div>
-        {options.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            aria-pressed={option.value === value}
-            onClick={() => onChange(option.value)}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-    </fieldset>
-  );
-}
-
-function RangeField({
-  label,
-  value,
-  min,
-  max,
-  step,
-  suffix,
-  disabled,
-  onChange
-}: {
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  step: number;
-  suffix: string;
-  disabled?: boolean;
-  onChange: (value: number) => void;
-}) {
-  return (
-    <label className="range-field">
-      <span>
-        {label}
-        <strong>
-          {value}
-          {suffix}
-        </strong>
-      </span>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        disabled={disabled}
-        onChange={(event) => onChange(Number(event.target.value))}
-      />
-    </label>
-  );
-}
-
-function normalizeUiError(error: unknown): SerializedProcessingError {
-  if (
-    error &&
-    typeof error === "object" &&
-    "message" in error &&
-    "code" in error &&
-    typeof (error as SerializedProcessingError).message === "string"
-  ) {
-    return error as SerializedProcessingError;
-  }
-
-  return {
-    code: "unknown",
-    message: "The browser could not finish this export.",
-    detail: error instanceof Error ? error.message : String(error)
-  };
-}
-
-function formatOptionalNumber(value: number | undefined, suffix: string): string {
-  return typeof value === "number" ? `${value.toFixed(1)}${suffix}` : "Measured";
 }
 
 function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {

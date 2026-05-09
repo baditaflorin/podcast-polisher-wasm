@@ -21,6 +21,15 @@ const RNNOISE_MODEL_PATH = "std.rnnn";
 let ffmpeg: FFmpeg | undefined;
 let rnnoiseModelLoaded = false;
 let logs: string[] = [];
+let activeProgress:
+  | {
+      start: number;
+      end: number;
+      message: string;
+      onProgress: (progress: ProcessingProgress) => void;
+      stage: ProcessingProgress["stage"];
+    }
+  | undefined;
 
 const api: AudioProcessorWorkerApi = {
   async processAudio(file, options, onProgress) {
@@ -47,7 +56,13 @@ const api: AudioProcessorWorkerApi = {
       const measurementCommand = buildMeasurementArgs(inputName, measurementFilter);
 
       report(onProgress, "measuring", 0.2, "Measuring EBU R128 loudness");
-      const measurementLog = await execOrThrow(instance, measurementCommand);
+      const measurementLog = await execOrThrow(instance, measurementCommand, {
+        end: 0.42,
+        message: "Measuring EBU R128 loudness",
+        onProgress,
+        stage: "measuring",
+        start: 0.2
+      });
       const measurement = parseLoudnormMeasurement(measurementLog);
 
       const finalFilter = buildFinalFilter(options, capabilities, measurement);
@@ -60,7 +75,13 @@ const api: AudioProcessorWorkerApi = {
       );
 
       report(onProgress, "processing", 0.45, "Applying cleanup and loudness normalization");
-      await execOrThrow(instance, command);
+      await execOrThrow(instance, command, {
+        end: 0.9,
+        message: "Applying cleanup and loudness normalization",
+        onProgress,
+        stage: "processing",
+        start: 0.45
+      });
 
       report(onProgress, "exporting", 0.92, "Preparing download");
       const bytes = await instance.readFile(outputName);
@@ -94,6 +115,15 @@ const api: AudioProcessorWorkerApi = {
     }
   },
 
+  cancel() {
+    ffmpeg?.terminate();
+    ffmpeg = undefined;
+    rnnoiseModelLoaded = false;
+    activeProgress = undefined;
+    logs = [];
+    return Promise.resolve();
+  },
+
   dispose() {
     ffmpeg?.terminate();
     ffmpeg = undefined;
@@ -112,6 +142,17 @@ async function ensureFfmpeg(): Promise<FFmpeg> {
   ffmpeg = new FFmpeg();
   ffmpeg.on("log", ({ message }) => {
     logs.push(message);
+  });
+  ffmpeg.on("progress", ({ progress }) => {
+    if (!activeProgress || !Number.isFinite(progress)) {
+      return;
+    }
+
+    activeProgress.onProgress({
+      stage: activeProgress.stage,
+      ratio: activeProgress.start + clamp(progress, 0, 1) * (activeProgress.end - activeProgress.start),
+      message: activeProgress.message
+    });
   });
 
   try {
@@ -139,9 +180,25 @@ async function ensureRnnoiseModel(instance: FFmpeg): Promise<void> {
   rnnoiseModelLoaded = true;
 }
 
-async function execOrThrow(instance: FFmpeg, command: string[]): Promise<string> {
+async function execOrThrow(
+  instance: FFmpeg,
+  command: string[],
+  progress?: {
+    start: number;
+    end: number;
+    message: string;
+    onProgress: (progress: ProcessingProgress) => void;
+    stage: ProcessingProgress["stage"];
+  }
+): Promise<string> {
   const logStart = logs.length;
-  const code = await instance.exec(command);
+  activeProgress = progress;
+  let code: number;
+  try {
+    code = await instance.exec(command);
+  } finally {
+    activeProgress = undefined;
+  }
   const commandLog = logs.slice(logStart).join("\n");
 
   if (code !== 0) {
@@ -153,6 +210,10 @@ async function execOrThrow(instance: FFmpeg, command: string[]): Promise<string>
   }
 
   return commandLog;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }
 
 async function cleanupFiles(instance: FFmpeg, paths: string[]): Promise<void> {

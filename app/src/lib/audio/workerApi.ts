@@ -6,5 +6,6 @@ export type AudioProcessorWorkerApi = {
     options: ProcessingOptions,
     onProgress: (progress: ProcessingProgress) => void
   ): Promise<ProcessingResult>;
+  cancel(): Promise<void>;
   dispose(): Promise<void>;
 };

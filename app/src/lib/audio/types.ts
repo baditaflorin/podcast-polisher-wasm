@@ -1,6 +1,13 @@
 export type ExportFormat = "mp3" | "wav";
 export type NoiseReductionMode = "rnnoise" | "spectral" | "off";
-export type ProcessingStage = "loading" | "preparing" | "measuring" | "processing" | "exporting" | "complete";
+export type ProcessingStage =
+  | "cancelled"
+  | "complete"
+  | "exporting"
+  | "loading"
+  | "measuring"
+  | "preparing"
+  | "processing";
 
 export type ProcessingOptions = {
   preset: "podcast" | "voiceover" | "archive";
@@ -47,6 +54,10 @@ export type SerializedProcessingError = {
   code: "ffmpeg_load_failed" | "ffmpeg_exec_failed" | "unsupported_file" | "unknown";
   message: string;
   detail?: string;
+  what?: string;
+  why?: string;
+  nowWhat?: string;
+  recoverable?: boolean;
 };
 
 export const defaultProcessingOptions: ProcessingOptions = {

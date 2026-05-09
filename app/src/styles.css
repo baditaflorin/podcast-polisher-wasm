@@ -164,6 +164,45 @@ textarea {
     @apply grid gap-3 rounded-md border border-ink/10 bg-paper p-4 text-sm;
   }
 
+  .preflight-panel,
+  .debug-panel {
+    @apply grid gap-3 rounded-md border border-teal/20 bg-teal/5 p-4 text-sm;
+  }
+
+  .preflight-panel.blocked {
+    @apply border-coral/35 bg-coral/10;
+  }
+
+  .preflight-panel dl {
+    @apply grid gap-2 sm:grid-cols-4;
+  }
+
+  .preflight-panel dt {
+    @apply text-xs font-bold uppercase tracking-wide text-ink/50;
+  }
+
+  .preflight-panel dd {
+    @apply mt-1 break-words font-black;
+  }
+
+  .issue-list,
+  .reason-list {
+    @apply grid gap-2;
+  }
+
+  .issue-list li {
+    @apply grid gap-1 rounded-md bg-panel p-3;
+  }
+
+  .issue-list span,
+  .reason-list li {
+    @apply text-ink/65;
+  }
+
+  .debug-panel pre {
+    @apply max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-md bg-ink p-3 text-xs text-paper;
+  }
+
   .status-panel.error {
     @apply border-coral/30 bg-coral/10 text-ink;
   }
