@@ -1,0 +1,11 @@
+{
+  "id": "empty-mp3",
+  "canProcess": false,
+  "container": "empty",
+  "codec": "none",
+  "sourceShape": "broken",
+  "recommendedPreset": "podcast",
+  "confidenceLabel": "low",
+  "warningCodes": [],
+  "fatalCodes": ["empty-file"]
+}

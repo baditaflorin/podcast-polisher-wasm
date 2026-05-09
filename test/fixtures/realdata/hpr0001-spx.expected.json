@@ -1,0 +1,11 @@
+{
+  "id": "hpr0001-spx",
+  "canProcess": true,
+  "container": "ogg",
+  "codec": "speex",
+  "sourceShape": "legacy-format",
+  "recommendedPreset": "archive",
+  "confidenceLabel": "low",
+  "warningCodes": ["legacy-codec-review", "duration-unavailable"],
+  "fatalCodes": []
+}

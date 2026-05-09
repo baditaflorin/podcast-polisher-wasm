@@ -1,0 +1,11 @@
+{
+  "id": "dvids-mp4-video",
+  "canProcess": true,
+  "container": "mp4",
+  "codec": "aac",
+  "sourceShape": "video-with-audio",
+  "recommendedPreset": "podcast",
+  "confidenceLabel": "medium",
+  "warningCodes": ["video-audio-extract"],
+  "fatalCodes": []
+}

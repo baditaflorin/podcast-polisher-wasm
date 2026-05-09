@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "fixtures": [
+    {
+      "id": "nasa-short-mp3",
+      "file": "nasa-short-mp3.mp3",
+      "source": "https://www.nasa.gov/historical-sounds/",
+      "class": "clean-short-spoken-clip"
+    },
+    {
+      "id": "bell-historic-ogg",
+      "file": "bell-historic-ogg.ogg",
+      "source": "https://commons.wikimedia.org/wiki/File:Alexander_Graham_Bell_speaking.ogg",
+      "class": "historic-archival-speech"
+    },
+    {
+      "id": "empty-mp3",
+      "file": "empty-mp3.mp3",
+      "source": "real-derived failed recorder/export",
+      "class": "broken-empty"
+    },
+    {
+      "id": "partial-mp3",
+      "file": "partial-mp3.mp3",
+      "source": "real-derived from https://hackerpublicradio.org/eps/hpr0001/index.html",
+      "class": "partial-truncated"
+    },
+    {
+      "id": "hpr0001-mp3",
+      "file": "hpr0001-mp3.mp3",
+      "source": "https://hackerpublicradio.org/eps/hpr0001/index.html",
+      "class": "full-podcast-episode"
+    },
+    {
+      "id": "hpr0001-opus",
+      "file": "hpr0001-opus.opus",
+      "source": "https://hackerpublicradio.org/download.html",
+      "class": "alternate-podcast-format"
+    },
+    {
+      "id": "hpr0001-spx",
+      "file": "hpr0001-spx.spx",
+      "source": "https://hackerpublicradio.org/download.html",
+      "class": "legacy-podcast-format"
+    },
+    {
+      "id": "hpr4470-unicode-name",
+      "file": "hpr4470-unicode-Ședință-podcast-test-1.mp3",
+      "source": "https://hackerpublicradio.org/eps/hpr4470/index.html",
+      "class": "unicode-filename-full-episode"
+    },
+    {
+      "id": "dvids-mp4-video",
+      "file": "dvids-mp4-video.mp4",
+      "source": "https://commons.wikimedia.org/wiki/File:B-1B_Lancer_Conducts_Mission_During_Operation_Epic_Fury_(999776).webm",
+      "class": "video-container-with-audio-track"
+    },
+    {
+      "id": "huge-repeated-mp3",
+      "file": "huge-repeated-mp3.mp3",
+      "source": "real-derived from https://hackerpublicradio.org/eps/hpr0001/index.html, repeated 3x to stay below GitHub's single-file limit",
+      "class": "huge-resource-cliff"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "id": "hpr0001-opus",
+  "canProcess": true,
+  "container": "ogg",
+  "codec": "opus",
+  "sourceShape": "full-episode",
+  "recommendedPreset": "podcast",
+  "confidenceLabel": "medium",
+  "warningCodes": ["long-job", "alternate-codec-review"],
+  "fatalCodes": []
+}

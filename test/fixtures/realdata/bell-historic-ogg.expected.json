@@ -1,0 +1,11 @@
+{
+  "id": "bell-historic-ogg",
+  "canProcess": true,
+  "container": "ogg",
+  "codec": "vorbis",
+  "sourceShape": "archive",
+  "recommendedPreset": "archive",
+  "confidenceLabel": "medium",
+  "warningCodes": ["archival-audio-review-denoise"],
+  "fatalCodes": []
+}

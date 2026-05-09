@@ -1,0 +1,11 @@
+{
+  "id": "huge-repeated-mp3",
+  "canProcess": true,
+  "container": "mp3",
+  "codec": "mp3",
+  "sourceShape": "huge-episode",
+  "recommendedPreset": "archive",
+  "confidenceLabel": "low",
+  "warningCodes": ["large-file-memory-risk", "long-job", "low-sample-rate-review"],
+  "fatalCodes": []
+}
